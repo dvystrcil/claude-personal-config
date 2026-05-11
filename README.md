@@ -68,7 +68,7 @@ git clone https://github.com/dvystrcil/claude-personal-config ~/.config/claude-p
 # 2. Clone (or create then clone) the work-side diary repo locally. This is
 #    where entries will land + where you'll git-push when you want them
 #    persisted to your work GitHub.
-git clone https://github.<your-work-host>/<you>/claude-workstation-config.git ~/Work/claude-diary-work
+git clone https://github.<your-host>/<you>/claude-workstation-config.git ~/Work/claude-diary-work
 
 # 3. Install with the work-environment env vars:
 #    - PERSONAL_PATHS: deny-list for paths that ARE personal (e.g. iCloud)
