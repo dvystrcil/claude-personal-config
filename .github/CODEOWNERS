@@ -1,0 +1,6 @@
+# Code owners for claude-personal-config
+#
+# All changes to this repo require review from the listed owner(s).
+# Required by the branch protection rules on `main`.
+
+* @dvystrcil
