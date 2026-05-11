@@ -30,15 +30,82 @@ Three asymmetric risks this repo navigates:
 
 ## Install
 
+The install needs TWO repos: this one (methodology, public) and a **diary store** (where entries land). The diary store is environment-specific — personal-managed at home, work-managed at work — and you pick the location.
+
+### Home environment
+
+Entries land in personal-managed storage. Pick one:
+
+| Diary store option | Example path | Notes |
+|---|---|---|
+| iCloud / Dropbox / Proton Drive | `~/iCloud-Drive/diary` | Simplest; no git needed; sync handled by the cloud provider |
+| Personal-account git repo | `~/diary` cloned from your personal GitHub | Versioned; push when you want |
+| Plain local directory backed up to a personal-only cloud | `~/.diary` | Simplest of all if cloud sync covers it |
+
+Then:
+
 ```bash
+# 1. Clone this methodology repo into a personal-only path
 git clone https://github.com/dvystrcil/claude-personal-config ~/.config/claude-personal
 cd ~/.config/claude-personal
+
+# 2. Run the install with DIARY_PATH set to your diary store
 DIARY_PATH=~/iCloud-Drive/diary ./install.sh
 ```
 
-`DIARY_PATH` is required. Choose a personal-managed storage location — iCloud, Dropbox, Proton Drive, or a personal-only git repo path. The install script refuses to set up if `DIARY_PATH` resolves under a work-managed root (configurable via `WORK_PATHS` env var; defaults to common enterprise patterns).
+The install refuses if `DIARY_PATH` resolves under a work-managed root (`WORK_PATHS`, defaults to common enterprise patterns like `~/Work`, `/opt/enterprise`, etc.).
 
-To uninstall: `./install.sh --uninstall` — removes the symlinks + settings fragment; leaves your diary entries untouched.
+### Work environment
+
+Entries land in **work-managed** storage. Two-repo setup:
+
+```bash
+# 1. Clone the methodology repo (this one). Keep it in a non-work-managed
+#    path even though the repo itself is public; the install refuses to run
+#    from inside a work-managed dir unless you set WORK_PATHS="".
+git clone https://github.com/dvystrcil/claude-personal-config ~/.config/claude-personal
+
+# 2. Clone (or create then clone) the work-side diary repo locally. This is
+#    where entries will land + where you'll git-push when you want them
+#    persisted to your work GitHub.
+git clone https://github.<your-work-host>/<you>/claude-workstation-config.git ~/Work/claude-diary-work
+
+# 3. Install with the work-environment env vars:
+#    - PERSONAL_PATHS: deny-list for paths that ARE personal (e.g. iCloud)
+#      so the install refuses if DIARY_PATH accidentally lands there.
+#    - WORK_PATHS="": disables the home-install's work-path refusal, since
+#      at work the diary IS expected to live in a work-managed path.
+cd ~/.config/claude-personal
+PERSONAL_PATHS=~/iCloud-Drive,~/Dropbox,~/Personal \
+WORK_PATHS="" \
+DIARY_PATH=~/Work/claude-diary-work \
+  ./install.sh
+```
+
+The two-repo split means:
+- The methodology repo (this one) is read-only at work — `git pull` to update; never push.
+- The diary repo (your work-side one) holds the entries that Claude writes during work sessions. Push to your work GitHub whenever you want to persist them; they never go to the methodology repo.
+
+### Verify
+
+```bash
+# Skills should appear in Claude Code's skill list
+ls ~/.claude/skills/
+
+# Settings fragment should point at your DIARY_PATH
+cat ~/.claude/settings.local.claude-personal-fragment.json
+
+# Write a test diary entry from a Claude Code session and verify it lands
+# in $DIARY_PATH, not in any unexpected location.
+```
+
+### Uninstall
+
+```bash
+cd ~/.config/claude-personal && ./install.sh --uninstall
+```
+
+Removes the symlinks + settings fragment. **Leaves your diary entries untouched** at `$DIARY_PATH`.
 
 ## Update
 
