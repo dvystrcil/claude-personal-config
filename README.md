@@ -118,11 +118,17 @@ Removes the symlinks + settings fragment. **Leaves your diary entries untouched*
 
 ## Update
 
+After the first install, a per-workstation `update.sh` is generated in the methodology repo's root with this workstation's `DIARY_PATH` (and other env-var overrides) baked in. To pull the latest methodology and re-run the install:
+
 ```bash
-cd ~/.config/claude-personal && git pull
+cd ~/.config/claude-personal && ./update.sh
 ```
 
-Symlinks resolve dynamically, so a `git pull` immediately propagates skills updates. No re-install needed.
+That's `git pull --ff-only` followed by `./install.sh` with the saved env. Idempotent — re-running replaces the CLAUDE.md block in place and re-resolves symlinks. No retyping of paths required.
+
+`update.sh` is gitignored (per-workstation values, never committed) and is regenerated on every install — so if you change `DIARY_PATH` by running install.sh with a new value, update.sh gets the new value too.
+
+If you ever want the bare `git pull` without re-running install: symlinks resolve dynamically, so pulling new skill content propagates automatically without an install pass.
 
 ## What's in `claude-skills/`
 
