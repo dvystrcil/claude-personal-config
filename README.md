@@ -90,7 +90,7 @@ The two-repo split means:
 
 1. Symlinks each skill in `claude-skills/` to `~/.claude/skills/<name>/` (skips conflicts; warns on each).
 2. Writes a JSON settings fragment at `~/.claude/settings.local.claude-personal-fragment.json` recording the resolved `DIARY_PATH`.
-3. Appends a marker-delimited block to `~/.claude/CLAUDE.md` (creates the file if absent) telling Claude Code where diary entries should land. The block is idempotent — re-running the install replaces it in place; uninstall removes it.
+3. Appends a marker-delimited block to `~/.claude/CLAUDE.md` (creates the file if absent). The block is self-contained — gives Claude Code **where** the diary lands (`DIARY_PATH`), **when** to write entries (trigger conditions from the methodology), and **how** to format them (filename + voice + what-doesn't-go-in). Idempotent — re-running the install replaces it in place; uninstall removes it.
 
 ### Verify
 

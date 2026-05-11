@@ -240,15 +240,43 @@ if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
     mv "$tmp" "$claude_md"
 fi
 
-# Append the managed block (creates the file if it doesn't exist)
+# Append the managed block (creates the file if it doesn't exist).
+# Block content is self-contained — gives Claude WHERE (path) AND WHEN
+# (trigger conditions) AND HOW (file format) without requiring it to
+# read the full methodology README first. Full methodology stays at
+# $REPO_DIR/diary/README.md for cases that want the long version.
 cat >> "$claude_md" <<EOF
 
 $marker_start
-# Diary practice — methodology at $REPO_DIR/diary/README.md.
-# When events warrant a diary entry, write to:
-#   $DIARY_PATH
-# Methodology applies across home and work installs; specific entries live in
-# whichever store \$DIARY_PATH points at and stay in that IP boundary.
+# Diary practice
+#
+# Methodology (full version): $REPO_DIR/diary/README.md
+# Entries land in: $DIARY_PATH
+#
+# Trigger — write an entry when something EVENTFUL happens in a session:
+#   - A notable correction, surprise, or change of direction
+#   - A principle that crystallized when it wasn't named before
+#   - A pattern operating implicitly that got surfaced
+#   - The user explicitly asks for one
+#
+# Time alone is NOT a trigger. A long uneventful session gets no entry;
+# a short session with a real moment gets one. The aim is reflection
+# that earns re-reading, not coverage.
+#
+# Voice: first-person ("I noticed", "I drifted"), specific (file paths,
+# commands, decisions), honest including about errors and corrections.
+# NOT celebratory. NOT performed feelings.
+#
+# What does NOT go in:
+#   - Secrets (anything the user wouldn't want others to read)
+#   - Things that could hurt other people
+#   - Daily summaries of unremarkable sessions
+#   - In a work environment: project-specific work-IP content that
+#     belongs in the work issue tracker, not in the diary practice
+#
+# File naming: YYYY-MM-DD-<short-slug>.md
+# Multiple entries per day OK if topics are genuinely distinct.
+#
 # Settings fragment ref: $frag
 $marker_end
 EOF
