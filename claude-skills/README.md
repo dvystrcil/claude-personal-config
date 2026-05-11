@@ -6,15 +6,16 @@ Cluster-agnostic skills, selected for portability to any workstation (personal o
 
 A skill is included here if it satisfies all of:
 
-1. **Cluster-agnostic.** Doesn't reference homelab-specific infrastructure (`homelab`, `owui`, `ollama`, `pgo`, `argocd`, `kubectl` as load-bearing). Mentions in *examples* are OK — substitute mentally for your context.
-2. **Methodology, not project content.** Describes *how to think/work*, not *what to do for project X*.
-3. **No private references.** No URLs to private repos, no internal documentation paths, no proprietary tooling names.
+1. **Methodology, not project content.** Describes *how to think/work*, not *what to do for project X*.
+2. **Either fully generic, OR builds on tooling the operator uses across both home and work environments.** The shared toolchain across both is currently: **Kubernetes**, **ArgoCD** (with the app-of-apps pattern + `argocd-projects/` directory layout), and **Infisical** (or `InfisicalSecret` CRD) for secret management. Skills can reference these by name. Skills must NOT encode environment-specific details (cluster names, hostnames, IP ranges, specific app names, version numbers); those go in the operator's `~/.claude/skills/` set at each environment separately.
+3. **No private references.** No URLs to private repos, no internal documentation paths, no proprietary tooling names beyond the shared toolchain above.
 
 ## Skills included
 
 | Skill | What it does | Notes |
 |---|---|---|
-| `code-reviewer/` | Code-review checklist + process | Contains one illustrative ArgoCD example; substitute your platform's equivalent |
+| `code-reviewer/` | Code-review checklist + process | Contains one illustrative ArgoCD example; ArgoCD is shared between environments |
+| `devops-engineer/` | K8s + ArgoCD + Infisical + CI/CD operations | Scrubbed of cluster-specific details (no hostnames, IPs, node names, app names); patterns + workflows only |
 | `doc-master/` | Documentation/writing assistance | Cluster-agnostic |
 | `find-skills/` | Discover what skills are available | Helper for orienting in a new skill set |
 | `first-ask/` | Clarify scope before starting | Methodology, no project refs |
@@ -24,11 +25,12 @@ A skill is included here if it satisfies all of:
 
 | Skill | Why excluded |
 |---|---|
-| `homelab-memory` | Tied to a specific PostgresCluster in a specific cluster |
+| `homelab-memory` | Tied to a specific PostgresCluster in the homelab cluster — no analog at work yet |
 | `n8n-import-workflow` | Tied to homelab n8n deployment |
 | `owui-import-pipeline` | Tied to homelab OWUI pipelines pod |
 | `owui-memory-loader` | Tied to homelab OWUI deployment |
-| `devops-engineer` | Has cluster-specific examples; revisit later as a possibly-portable subset |
+
+Each "NOT included" skill can become portable when the work environment gains the analogous tooling AND the operator decides to build skills around it. Today's shared toolchain is limited to Kubernetes + ArgoCD + Infisical; that scope can grow over time, deliberately.
 
 ## How to add a new skill
 
