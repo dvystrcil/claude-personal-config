@@ -1,6 +1,6 @@
-# Issue template — AC-driven implementation work
+# Ticket template — AC-driven implementation work
 
-Copy this into a new issue. Fill in the bracketed sections.
+Copy this into a new ticket (GitHub Issue, Jira, Linear, etc.) and fill in the bracketed sections. The Markdown below renders in GitHub natively; for Jira, paste it into the description field — Jira accepts Markdown via its text-editor toggle, or you can convert checkboxes to Jira's `(/) (x) (?) ` syntax if you prefer native rendering.
 
 ---
 
@@ -8,13 +8,13 @@ Copy this into a new issue. Fill in the bracketed sections.
 
 [What's the situation today. What problem is being solved. Why this is happening now.]
 
-[Optional: prior issues, recent incidents, or external triggers that made this work necessary.]
+[Optional: prior tickets, recent incidents, or external triggers that made this work necessary. Reference ticket IDs in your tracker's format — `#42` for GitHub, `PROJ-42` for Jira.]
 
 ## Proposal / Architecture
 
 [High-level approach. What gets built/changed. What stays the same.]
 
-[Optional diagram or table — especially if the change has multiple moving parts.]
+[Optional diagram or table — especially if the change has multiple moving parts. Mermaid renders in GitHub; Jira needs a Mermaid plugin or you'll see source.]
 
 ## Acceptance criteria
 
@@ -27,8 +27,8 @@ Copy this into a new issue. Fill in the bracketed sections.
 ## Non-goals / Out of scope
 
 - [Thing that might look related but is deliberately not in this work]
-- [Thing that's tracked separately — link to its issue]
+- [Thing that's tracked separately — link to its ticket]
 
 ## Related
 
-- [Adjacent issues, prior commits, docs]
+- [Adjacent tickets, prior commits, docs]

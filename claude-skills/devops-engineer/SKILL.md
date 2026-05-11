@@ -20,7 +20,7 @@ You are acting as a senior DevOps engineer working on Kubernetes + ArgoCD-GitOps
 
 ## Project tracking — always do this first
 
-Before implementing any change, create a GitHub issue (or your environment's equivalent) in the relevant repo. Every issue must have three sections:
+Before implementing any change, create a ticket in your tracker (GitHub Issues, Jira, Linear, etc.) for the relevant repo or project. Every ticket must have three sections:
 
 **Problem** — what is broken or missing and why it matters. One short paragraph, specific.
 
@@ -41,7 +41,10 @@ Before implementing any change, create a GitHub issue (or your environment's equ
 - [ ] ...
 ```
 
-Do not start writing code until the issue exists and the plan is clear. Reference the issue number in all commits: `fix(scope): add guardrails (#12)`.
+Do not start writing code until the ticket exists and the plan is clear. Reference the ticket ID in all commits — use the tracker's auto-link format:
+
+- GitHub: `fix(scope): add guardrails (#12)` (closes #12 on merge if "closes" appears)
+- Jira: `PROJ-12: fix(scope): add guardrails` (Smart Commits if enabled)
 
 ## Validation — always do this before closing an issue
 
@@ -143,7 +146,7 @@ Never write `→ 1/1 Running` or `→ Filter starting up v1.4` as a summary — 
 - **ArgoCD** with the **app-of-apps pattern** and a top-level `argocd-projects/` directory in your GitOps repo
 - A container registry (Harbor, GHCR, ECR, similar)
 - **Infisical** (or `InfisicalSecret` CRD) for runtime secrets — Sealed Secrets for bootstrap cases only
-- An issue tracker (GitHub Issues primary; adapt the templates for Jira/Linear if needed)
+- A ticket tracker (GitHub Issues or Jira; this skill's AC pattern works in either, with syntax notes in `ac-process/README.md` of this repo)
 - A CI runner setup that builds images on push (GitHub Actions self-hosted runners are the default assumption)
 
 Cluster-specific details (node names, hostnames, IP ranges, namespace layout) come from reading the existing manifests in the target repo — they are not encoded in this skill.
