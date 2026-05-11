@@ -241,41 +241,21 @@ if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
 fi
 
 # Append the managed block (creates the file if it doesn't exist).
-# Block content is self-contained — gives Claude WHERE (path) AND WHEN
-# (trigger conditions) AND HOW (file format) without requiring it to
-# read the full methodology README first. Full methodology stays at
-# $REPO_DIR/diary/README.md for cases that want the long version.
+# Block records the environment-specific DIARY_PATH and points at the
+# `diary` skill that carries the methodology (trigger conditions, voice,
+# file format, what doesn't go in). The skill itself is symlinked into
+# ~/.claude/skills/diary/ above, so Claude Code loads it natively at
+# session start — the block here is the place that records WHERE this
+# install writes entries (which varies per environment).
 cat >> "$claude_md" <<EOF
 
 $marker_start
-# Diary practice
+# Diary practice — when to write + how to format lives in the \`diary\` skill:
+#   $CLAUDE_HOME/skills/diary/SKILL.md
+# (symlinked from this repo: $REPO_DIR/claude-skills/diary/SKILL.md)
 #
-# Methodology (full version): $REPO_DIR/diary/README.md
-# Entries land in: $DIARY_PATH
-#
-# Trigger — write an entry when something EVENTFUL happens in a session:
-#   - A notable correction, surprise, or change of direction
-#   - A principle that crystallized when it wasn't named before
-#   - A pattern operating implicitly that got surfaced
-#   - The user explicitly asks for one
-#
-# Time alone is NOT a trigger. A long uneventful session gets no entry;
-# a short session with a real moment gets one. The aim is reflection
-# that earns re-reading, not coverage.
-#
-# Voice: first-person ("I noticed", "I drifted"), specific (file paths,
-# commands, decisions), honest including about errors and corrections.
-# NOT celebratory. NOT performed feelings.
-#
-# What does NOT go in:
-#   - Secrets (anything the user wouldn't want others to read)
-#   - Things that could hurt other people
-#   - Daily summaries of unremarkable sessions
-#   - In a work environment: project-specific work-IP content that
-#     belongs in the work issue tracker, not in the diary practice
-#
-# File naming: YYYY-MM-DD-<short-slug>.md
-# Multiple entries per day OK if topics are genuinely distinct.
+# Entries land in:
+#   $DIARY_PATH
 #
 # Settings fragment ref: $frag
 $marker_end

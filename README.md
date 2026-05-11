@@ -141,9 +141,11 @@ Some skills include illustrative examples drawn from the personal homelab contex
 
 The AC-driven issue pattern: define acceptance criteria upfront, work through them explicitly, present final status as a ✅/❌/⏳ table. See [ac-process/README.md](./ac-process/README.md) for the templates.
 
-## What's in `diary/`
+## Diary practice
 
-ONLY the methodology README. Diary entries live in `$DIARY_PATH`, NOT here.
+The diary methodology is now a **first-class skill** at `claude-skills/diary/SKILL.md`. The install symlinks it into `~/.claude/skills/diary/` alongside the other skills, so Claude Code loads the trigger conditions, voice rules, and file format at session start without needing a manual prompt.
+
+The CLAUDE.md block written by the install records this workstation's `DIARY_PATH` and points at the skill. Diary entries land at `$DIARY_PATH` (the operator's choice — personal storage at home, work-managed storage at work) and never in this repo.
 
 ## License
 

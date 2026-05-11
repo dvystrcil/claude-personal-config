@@ -16,6 +16,7 @@ A skill is included here if it satisfies all of:
 |---|---|---|
 | `code-reviewer/` | Code-review checklist + process | Contains one illustrative ArgoCD example; ArgoCD is shared between environments |
 | `devops-engineer/` | K8s + ArgoCD + Infisical + CI/CD operations | Scrubbed of cluster-specific details (no hostnames, IPs, node names, app names); patterns + workflows only |
+| `diary/` | Reflective diary practice — trigger conditions, voice rules, file format | Carries the methodology that used to live in the top-level `diary/README.md`; environment-specific `DIARY_PATH` is in CLAUDE.md + the JSON settings fragment |
 | `doc-master/` | Documentation/writing assistance | Cluster-agnostic |
 | `find-skills/` | Discover what skills are available | Helper for orienting in a new skill set |
 | `first-ask/` | Clarify scope before starting | Methodology, no project refs |
