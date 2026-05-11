@@ -86,6 +86,12 @@ The two-repo split means:
 - The methodology repo (this one) is read-only at work — `git pull` to update; never push.
 - The diary repo (your work-side one) holds the entries that Claude writes during work sessions. Push to your work GitHub whenever you want to persist them; they never go to the methodology repo.
 
+### What the install does
+
+1. Symlinks each skill in `claude-skills/` to `~/.claude/skills/<name>/` (skips conflicts; warns on each).
+2. Writes a JSON settings fragment at `~/.claude/settings.local.claude-personal-fragment.json` recording the resolved `DIARY_PATH`.
+3. Appends a marker-delimited block to `~/.claude/CLAUDE.md` (creates the file if absent) telling Claude Code where diary entries should land. The block is idempotent — re-running the install replaces it in place; uninstall removes it.
+
 ### Verify
 
 ```bash
@@ -94,6 +100,9 @@ ls ~/.claude/skills/
 
 # Settings fragment should point at your DIARY_PATH
 cat ~/.claude/settings.local.claude-personal-fragment.json
+
+# CLAUDE.md should contain the diary block
+grep -A 5 'claude-personal-config' ~/.claude/CLAUDE.md
 
 # Write a test diary entry from a Claude Code session and verify it lands
 # in $DIARY_PATH, not in any unexpected location.

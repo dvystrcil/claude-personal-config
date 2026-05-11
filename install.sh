@@ -81,7 +81,7 @@ is_under_any_path() {
 }
 
 uninstall() {
-    info "Uninstalling — removing symlinks and Claude Code settings fragment."
+    info "Uninstalling — removing symlinks, settings fragment, and CLAUDE.md diary block."
     local skills_dir="$CLAUDE_HOME/skills"
     if [ -d "$skills_dir" ]; then
         for sk in "$REPO_DIR"/claude-skills/*/; do
@@ -98,7 +98,26 @@ uninstall() {
         rm "$frag"
         info "  removed settings fragment: $frag"
     fi
-    info "Uninstall complete. Diary entries left untouched."
+    local claude_md="$CLAUDE_HOME/CLAUDE.md"
+    local marker_start="# >>> claude-personal-config (managed by install.sh — do not edit between markers) >>>"
+    local marker_end="# <<< claude-personal-config <<<"
+    if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
+        local tmp
+        tmp=$(mktemp)
+        awk -v start="$marker_start" -v end="$marker_end" '
+            $0 == start { skip=1; next }
+            $0 == end   { skip=0; next }
+            !skip       { print }
+        ' "$claude_md" > "$tmp"
+        mv "$tmp" "$claude_md"
+        info "  removed CLAUDE.md diary block from: $claude_md"
+        # If CLAUDE.md is now blank or only whitespace, remove the file entirely
+        if [ ! -s "$claude_md" ] || ! grep -q '[^[:space:]]' "$claude_md"; then
+            rm "$claude_md"
+            info "  removed empty CLAUDE.md: $claude_md"
+        fi
+    fi
+    info "Uninstall complete. Diary entries at \$DIARY_PATH left untouched."
     exit 0
 }
 
@@ -199,6 +218,41 @@ cat > "$frag" <<EOF
 }
 EOF
 info "  ✓ wrote settings fragment: $frag"
+
+# Append a marked block to ~/.claude/CLAUDE.md so Claude Code's session-start
+# context includes the diary-path pointer. The settings fragment is just JSON
+# documentation; Claude Code doesn't auto-load it. CLAUDE.md IS auto-loaded
+# at session start. Markers make the block idempotent (re-runs replace it
+# in place) and removable on --uninstall.
+claude_md="$CLAUDE_HOME/CLAUDE.md"
+marker_start="# >>> claude-personal-config (managed by install.sh — do not edit between markers) >>>"
+marker_end="# <<< claude-personal-config <<<"
+
+# Remove any existing managed block (idempotent re-runs)
+if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
+    # sed -i differs across BSD (macOS) vs GNU; use a portable temp-file pattern
+    tmp=$(mktemp)
+    awk -v start="$marker_start" -v end="$marker_end" '
+        $0 == start { skip=1; next }
+        $0 == end   { skip=0; next }
+        !skip       { print }
+    ' "$claude_md" > "$tmp"
+    mv "$tmp" "$claude_md"
+fi
+
+# Append the managed block (creates the file if it doesn't exist)
+cat >> "$claude_md" <<EOF
+
+$marker_start
+# Diary practice — methodology at $REPO_DIR/diary/README.md.
+# When events warrant a diary entry, write to:
+#   $DIARY_PATH
+# Methodology applies across home and work installs; specific entries live in
+# whichever store \$DIARY_PATH points at and stay in that IP boundary.
+# Settings fragment ref: $frag
+$marker_end
+EOF
+info "  ✓ wrote CLAUDE.md diary block: $claude_md"
 
 cat <<EOF
 
