@@ -2,7 +2,9 @@
 # install.sh — idempotent setup for the portable Claude Code methodology.
 #
 # Sets up:
-#   - Symlinks selected skills to ~/.claude/skills/
+#   - Clones (or pulls) dvystrcil/skills and symlinks the cluster-agnostic
+#     subset listed in dvystrcil/skills/portable-skills.txt into
+#     ~/.claude/skills/.
 #   - Configures Claude Code settings fragment with the diary path
 #   - Refuses to run if install dir lies under a work-managed root (home install case)
 #   - Refuses to run if DIARY_PATH lies under the "wrong" root for the environment:
@@ -27,17 +29,18 @@
 #   ./install.sh --uninstall
 #
 # Environment:
-#   DIARY_PATH      Required for install. Where diary entries are written.
-#   WORK_PATHS      Comma-separated path prefixes treated as work-managed.
-#                   Defaults: /work,/Work,/opt/enterprise,/opt/company,~/Work,~/work
-#                   At a WORK install, set this to "" (empty) to disable the
-#                   refuse-if-under-work check (since you WANT the diary in work
-#                   storage there).
-#   PERSONAL_PATHS  Comma-separated path prefixes treated as personal-managed.
-#                   Empty by default. At a WORK install, set this to your known
-#                   personal roots (iCloud, Dropbox, etc.) so the install refuses
-#                   if DIARY_PATH accidentally lands there.
-#   CLAUDE_HOME     Optional. Defaults to ~/.claude.
+#   DIARY_PATH        Required for install. Where diary entries are written.
+#   WORK_PATHS        Comma-separated path prefixes treated as work-managed.
+#                     Defaults: /work,/Work,/opt/enterprise,/opt/company,~/Work,~/work
+#                     At a WORK install, set this to "" (empty) to disable the
+#                     refuse-if-under-work check.
+#   PERSONAL_PATHS    Comma-separated path prefixes treated as personal-managed.
+#                     Empty by default. At a WORK install, set this to your known
+#                     personal roots (iCloud, Dropbox, etc.) so the install refuses
+#                     if DIARY_PATH accidentally lands there.
+#   CLAUDE_HOME       Optional. Defaults to ~/.claude.
+#   SKILLS_REPO_DIR   Optional. Where to clone dvystrcil/skills. Defaults to
+#                     a sibling of this repo: $(dirname $REPO_DIR)/skills.
 #
 # IP-boundary intent:
 #   - HOME install: keep diary OUT of work-managed storage. WORK_PATHS check fires.
@@ -45,11 +48,15 @@
 #     check fires. (Work entries belong in work systems for IP compliance.)
 #   - Methodology repo source lives in a personally-managed location at home;
 #     at work it's cloned to wherever (it's open-source public methodology).
+#   - Skills source repo (dvystrcil/skills) is public on GitHub; cloned via HTTPS
+#     without auth.
 
 set -euo pipefail
 
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_HOME="${CLAUDE_HOME:-$HOME/.claude}"
+SKILLS_REPO_URL="https://github.com/dvystrcil/skills.git"
+SKILLS_REPO_DIR="${SKILLS_REPO_DIR:-$(dirname "$REPO_DIR")/skills}"
 WORK_PATHS_DEFAULT="/work,/Work,/opt/enterprise,/opt/company,${HOME}/Work,${HOME}/work"
 WORK_PATHS="${WORK_PATHS-$WORK_PATHS_DEFAULT}"  # use - not := so an explicit "" disables
 PERSONAL_PATHS="${PERSONAL_PATHS-}"             # empty by default
@@ -68,7 +75,6 @@ is_under_any_path() {
     [ -z "$list" ] && return 1
     IFS=',' read -ra paths <<< "$list"
     for p in "${paths[@]}"; do
-        # trim whitespace + expand ~
         p="${p# }"; p="${p% }"
         p="${p/#\~/$HOME}"
         [ -z "$p" ] && continue
@@ -81,20 +87,23 @@ is_under_any_path() {
 }
 
 uninstall() {
-    info "Uninstalling — removing symlinks, settings fragment, CLAUDE.md diary block, and update.sh."
+    info "Uninstalling — removing skill symlinks, settings fragment, CLAUDE.md diary block, update.sh."
     local update_script="$REPO_DIR/update.sh"
     if [ -f "$update_script" ]; then
         rm "$update_script"
         info "  removed update.sh: $update_script"
     fi
     local skills_dir="$CLAUDE_HOME/skills"
-    if [ -d "$skills_dir" ]; then
-        for sk in "$REPO_DIR"/claude-skills/*/; do
+    if [ -d "$skills_dir" ] && [ -d "$SKILLS_REPO_DIR/claude" ]; then
+        for sk in "$SKILLS_REPO_DIR"/claude/*/; do
             name=$(basename "$sk")
             target="$skills_dir/$name"
             if [ -L "$target" ]; then
-                rm "$target"
-                info "  removed symlink: $target"
+                actual=$(readlink "$target")
+                if [ "$actual" = "$sk" ] || [ "$actual" = "${sk%/}" ]; then
+                    rm "$target"
+                    info "  removed symlink: $target"
+                fi
             fi
         done
     fi
@@ -116,13 +125,12 @@ uninstall() {
         ' "$claude_md" > "$tmp"
         mv "$tmp" "$claude_md"
         info "  removed CLAUDE.md diary block from: $claude_md"
-        # If CLAUDE.md is now blank or only whitespace, remove the file entirely
         if [ ! -s "$claude_md" ] || ! grep -q '[^[:space:]]' "$claude_md"; then
             rm "$claude_md"
             info "  removed empty CLAUDE.md: $claude_md"
         fi
     fi
-    info "Uninstall complete. Diary entries at \$DIARY_PATH left untouched."
+    info "Uninstall complete. Diary entries at \$DIARY_PATH and the cloned skills repo left untouched."
     exit 0
 }
 
@@ -130,16 +138,12 @@ if [ "${1:-}" = "--uninstall" ]; then
     uninstall
 fi
 
-# Pre-flight 1: refuse to install from inside a work-managed path. The
-# methodology repo's source should sit in a personally-managed location even on
-# a work box (it's public; clone it under your home dir, not under ~/Work/).
+# Pre-flight 1: refuse to install from inside a work-managed path.
 matched=$(is_under_any_path "$REPO_DIR" "$WORK_PATHS" || true)
 if [ -n "$matched" ]; then
     err "Install dir '$REPO_DIR' is under work-managed path '$matched'.
 Move this repo to a non-work-managed directory (e.g. ~/.config/claude-personal/)
-before installing. The methodology repo itself is open-source public; cloning
-it under ~/Work/ confuses ownership at audit time. To intentionally disable
-this check, set WORK_PATHS=\"\" when invoking install.sh."
+before installing. To intentionally disable this check, set WORK_PATHS=\"\"."
 fi
 
 # Require DIARY_PATH
@@ -154,49 +158,59 @@ Set it to where diary entries should land. The environment determines what
              DIARY_PATH=~/Work/claude-diary-work ./install.sh"
 fi
 
-# Resolve DIARY_PATH absolutely
 DIARY_PATH="${DIARY_PATH/#\~/$HOME}"
 
-# Pre-flight 2a: at HOME installs (WORK_PATHS active), refuse if DIARY_PATH is
-# under a work-managed path. Keep personal-environment diary out of work
-# storage.
+# Pre-flight 2a + 2b: DIARY_PATH IP-boundary checks
 matched=$(is_under_any_path "$DIARY_PATH" "$WORK_PATHS" || true)
 if [ -n "$matched" ]; then
     err "DIARY_PATH '$DIARY_PATH' is under work-managed path '$matched'.
-If this is a HOME environment: pick a personal-managed path instead.
-If this IS a work environment: set WORK_PATHS=\"\" to disable this check
-and set PERSONAL_PATHS to your known-personal roots so the inverse check
-fires instead.
-
-Examples:
-  Home:  DIARY_PATH=~/iCloud-Drive/diary ./install.sh
-  Work:  PERSONAL_PATHS=~/iCloud-Drive,~/Dropbox WORK_PATHS=\"\" \\
-         DIARY_PATH=~/Work/claude-diary-work ./install.sh"
+At a HOME install, pick a personal-managed path. At a WORK install, set
+WORK_PATHS=\"\" and set PERSONAL_PATHS to your personal roots."
 fi
-
-# Pre-flight 2b: at WORK installs (PERSONAL_PATHS active), refuse if DIARY_PATH
-# is under a personal-managed path. Keep work-environment diary out of personal
-# storage.
 matched=$(is_under_any_path "$DIARY_PATH" "$PERSONAL_PATHS" || true)
 if [ -n "$matched" ]; then
     err "DIARY_PATH '$DIARY_PATH' is under personal-managed path '$matched'.
-At a work install, the diary should live in WORK-managed storage so entries
-stay in the IP boundary of the work environment that produced them. Pick a
-work-managed path (e.g. a clone of your work GitHub's diary repo)."
+At a work install, the diary belongs in work-managed storage."
 fi
 
-# Create DIARY_PATH if it doesn't exist
 mkdir -p "$DIARY_PATH"
 info "Diary path: $DIARY_PATH"
 
-# Symlink skills
+# Clone or update dvystrcil/skills
+if [ -d "$SKILLS_REPO_DIR/.git" ]; then
+    info "Pulling latest dvystrcil/skills at $SKILLS_REPO_DIR"
+    git -C "$SKILLS_REPO_DIR" pull --ff-only --quiet
+else
+    info "Cloning dvystrcil/skills to $SKILLS_REPO_DIR"
+    git clone --quiet "$SKILLS_REPO_URL" "$SKILLS_REPO_DIR"
+fi
+
+PORTABLE_FILE="$SKILLS_REPO_DIR/portable-skills.txt"
+if [ ! -f "$PORTABLE_FILE" ]; then
+    err "portable-skills.txt not found at $PORTABLE_FILE"
+fi
+
+# Symlink the listed cluster-agnostic skills into ~/.claude/skills/
 mkdir -p "$CLAUDE_HOME/skills"
-for sk in "$REPO_DIR"/claude-skills/*/; do
-    name=$(basename "$sk")
+info "Linking portable skills from $SKILLS_REPO_DIR/claude/ into $CLAUDE_HOME/skills/"
+
+while IFS= read -r raw; do
+    # Strip comments and whitespace
+    name="${raw%%#*}"
+    name="${name// /}"
+    [ -z "$name" ] && continue
+
+    skill_dir="$SKILLS_REPO_DIR/claude/$name"
     target="$CLAUDE_HOME/skills/$name"
+
+    if [ ! -d "$skill_dir" ]; then
+        info "  · $name not in dvystrcil/skills/claude/ — install separately if needed (e.g. via Anthropic's skill registry)"
+        continue
+    fi
+
     if [ -L "$target" ]; then
         actual=$(readlink "$target")
-        if [ "$actual" = "$sk" ] || [ "$actual" = "${sk%/}" ]; then
+        if [ "$actual" = "$skill_dir" ] || [ "$actual" = "${skill_dir%/}" ]; then
             info "  ✓ $name (symlink already in place)"
             continue
         fi
@@ -207,9 +221,9 @@ for sk in "$REPO_DIR"/claude-skills/*/; do
         warn "  ⚠ $target exists (not a symlink); skipping. Move or remove it manually if you want this skill linked."
         continue
     fi
-    ln -s "$sk" "$target"
+    ln -s "$skill_dir" "$target"
     info "  ✓ symlinked $name"
-done
+done < "$PORTABLE_FILE"
 
 # Write Claude Code settings fragment
 frag="$CLAUDE_HOME/settings.local.claude-personal-fragment.json"
@@ -218,24 +232,18 @@ cat > "$frag" <<EOF
   "_comment": "Generated by claude-personal-config/install.sh — do not edit by hand. Re-run install.sh to update.",
   "diary": {
     "path": "$DIARY_PATH",
-    "methodology_ref": "$REPO_DIR/claude-skills/diary/SKILL.md"
+    "methodology_ref": "$SKILLS_REPO_DIR/claude/diary/SKILL.md"
   }
 }
 EOF
 info "  ✓ wrote settings fragment: $frag"
 
-# Append a marked block to ~/.claude/CLAUDE.md so Claude Code's session-start
-# context includes the diary-path pointer. The settings fragment is just JSON
-# documentation; Claude Code doesn't auto-load it. CLAUDE.md IS auto-loaded
-# at session start. Markers make the block idempotent (re-runs replace it
-# in place) and removable on --uninstall.
+# Append a marked block to ~/.claude/CLAUDE.md
 claude_md="$CLAUDE_HOME/CLAUDE.md"
 marker_start="# >>> claude-personal-config (managed by install.sh — do not edit between markers) >>>"
 marker_end="# <<< claude-personal-config <<<"
 
-# Remove any existing managed block (idempotent re-runs)
 if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
-    # sed -i differs across BSD (macOS) vs GNU; use a portable temp-file pattern
     tmp=$(mktemp)
     awk -v start="$marker_start" -v end="$marker_end" '
         $0 == start { skip=1; next }
@@ -245,19 +253,12 @@ if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
     mv "$tmp" "$claude_md"
 fi
 
-# Append the managed block (creates the file if it doesn't exist).
-# Block records the environment-specific DIARY_PATH and points at the
-# `diary` skill that carries the methodology (trigger conditions, voice,
-# file format, what doesn't go in). The skill itself is symlinked into
-# ~/.claude/skills/diary/ above, so Claude Code loads it natively at
-# session start — the block here is the place that records WHERE this
-# install writes entries (which varies per environment).
 cat >> "$claude_md" <<EOF
 
 $marker_start
 # Diary practice — when to write + how to format lives in the \`diary\` skill:
 #   $CLAUDE_HOME/skills/diary/SKILL.md
-# (symlinked from this repo: $REPO_DIR/claude-skills/diary/SKILL.md)
+# (symlinked from dvystrcil/skills: $SKILLS_REPO_DIR/claude/diary/SKILL.md)
 #
 # Entries land in:
 #   $DIARY_PATH
@@ -267,15 +268,12 @@ $marker_end
 EOF
 info "  ✓ wrote CLAUDE.md diary block: $claude_md"
 
-# Write a per-workstation update.sh that re-runs install.sh with this
-# workstation's resolved env vars baked in. Saves the operator from
-# having to remember DIARY_PATH / WORK_PATHS / PERSONAL_PATHS each
-# time they want to update. Gitignored.
+# Write a per-workstation update.sh
 update_script="$REPO_DIR/update.sh"
 {
     echo "#!/bin/bash"
     echo "# update.sh — generated by install.sh on $(date -u +'%Y-%m-%dT%H:%M:%SZ')."
-    echo "# Pulls the latest methodology + re-runs install.sh with the env this"
+    echo "# Pulls the latest methodology + skills + re-runs install.sh with the env this"
     echo "# workstation was installed with. Do NOT edit by hand — re-run install.sh"
     echo "# to regenerate. Gitignored."
     echo ""
@@ -286,14 +284,12 @@ update_script="$REPO_DIR/update.sh"
     echo "echo 'Pulling latest methodology...'"
     echo "git pull --ff-only"
     echo ""
-    echo "echo 'Re-running install with saved env...'"
-    # The pre-baked invocation. Use single-quoted values to handle paths with
-    # special characters safely. WORK_PATHS / PERSONAL_PATHS preserved even
-    # when empty so the work-install case (WORK_PATHS="") survives re-runs.
+    echo "echo 'Re-running install with saved env (which also pulls dvystrcil/skills)...'"
     echo "DIARY_PATH='$DIARY_PATH' \\"
     echo "WORK_PATHS='$WORK_PATHS' \\"
     echo "PERSONAL_PATHS='$PERSONAL_PATHS' \\"
     echo "CLAUDE_HOME='$CLAUDE_HOME' \\"
+    echo "SKILLS_REPO_DIR='$SKILLS_REPO_DIR' \\"
     echo "  ./install.sh"
 } > "$update_script"
 chmod +x "$update_script"
@@ -304,20 +300,21 @@ cat <<EOF
 Install complete.
 
   Skills linked under:  $CLAUDE_HOME/skills/
+  Skills source repo:   $SKILLS_REPO_DIR  (dvystrcil/skills)
   Settings fragment:    $frag
   Diary entries land:   $DIARY_PATH
 
-To verify: ask Claude Code to list available skills — the set from this repo
-should appear.
+To verify: ask Claude Code to list available skills — the cluster-agnostic
+subset from dvystrcil/skills should appear (plus any Anthropic-installed
+skills like find-skills / tdd / scheduler that this script doesn't manage).
 
 If $DIARY_PATH is a git clone (e.g. your work-diary or personal-diary repo),
 push entries to its remote periodically — entries are markdown files Claude
 writes to that directory; git semantics are operator-managed.
 
-To update later: run \`./update.sh\` from this directory. It pulls the latest
-methodology + re-runs install.sh with the env vars this install was invoked
-with (DIARY_PATH, WORK_PATHS, PERSONAL_PATHS, CLAUDE_HOME). update.sh is
-gitignored — regenerated on every install.
+To update later: run \`./update.sh\` from this directory. It pulls both repos
+and re-runs install.sh with the env vars this install was invoked with.
+update.sh is gitignored — regenerated on every install.
 
 To uninstall: ./install.sh --uninstall
 EOF

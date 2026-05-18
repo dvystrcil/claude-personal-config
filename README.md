@@ -8,13 +8,13 @@ This repo is the **methodology layer**. It does NOT contain any diary entries, a
 
 | Asset | In this repo? | Why |
 |---|---|---|
-| `claude-skills/` | ✅ Selected subset | Cluster-agnostic skills only (doc-master, code-reviewer, find-skills, etc.). Homelab-specific tooling skills excluded. |
+| Skill content | ❌ **moved to [`dvystrcil/skills`](https://github.com/dvystrcil/skills)** | Canonical home for all Claude Code / opencode / OWUI skills. `install.sh` clones that repo and symlinks the cluster-agnostic subset (per its `portable-skills.txt`) into `~/.claude/skills/`. |
 | `ac-process/` | ✅ | Templates for the AC-driven issue/PR pattern. Methodology, no project content. |
 | `diary/README.md` | ✅ | The diary practice itself — trigger rules, voice rules. **No actual entries.** |
-| `install.sh` | ✅ | Idempotent setup script that refuses to run inside work-managed paths. |
+| `install.sh` | ✅ | Idempotent setup — clones `dvystrcil/skills`, symlinks the portable subset, configures Claude Code, refuses unsafe paths. |
 | **Diary entries** | ❌ **deliberately excluded** | Entries written from any workstation live in personal-managed storage (iCloud / personal git account / personal cloud) — NEVER in this repo or any work-managed path. |
 | Homelab memory entries | ❌ excluded | Reference homelab infrastructure; no value at work environment + non-zero leakage risk. |
-| Homelab-specific skills | ❌ excluded | `homelab-memory`, `owui-import-pipeline`, `n8n-import-workflow`, etc. — tied to personal cluster. |
+| Homelab-specific skills | ❌ excluded from `portable-skills.txt` | `homelab-memory`, `owui-import-pipeline`, `n8n-import-workflow`, etc. exist in `dvystrcil/skills/claude/` but the portable manifest excludes them. |
 
 ## IP boundary
 
@@ -88,9 +88,10 @@ The two-repo split means:
 
 ### What the install does
 
-1. Symlinks each skill in `claude-skills/` to `~/.claude/skills/<name>/` (skips conflicts; warns on each).
-2. Writes a JSON settings fragment at `~/.claude/settings.local.claude-personal-fragment.json` recording the resolved `DIARY_PATH`.
-3. Appends a marker-delimited block to `~/.claude/CLAUDE.md` (creates the file if absent). The block is self-contained — gives Claude Code **where** the diary lands (`DIARY_PATH`), **when** to write entries (trigger conditions from the methodology), and **how** to format them (filename + voice + what-doesn't-go-in). Idempotent — re-running the install replaces it in place; uninstall removes it.
+1. Clones (or `git pull`s) [`dvystrcil/skills`](https://github.com/dvystrcil/skills) to a sibling directory (`$(dirname $REPO_DIR)/skills` by default; override with `SKILLS_REPO_DIR`).
+2. Reads `portable-skills.txt` from that repo and symlinks each listed skill from `dvystrcil/skills/claude/<name>/` to `~/.claude/skills/<name>/`. Skills in the manifest but not in the repo (e.g. Anthropic-installed ones like `find-skills`, `scheduler`, `tdd`) are logged as informational; install them via Anthropic's skill registry if you want them.
+3. Writes a JSON settings fragment at `~/.claude/settings.local.claude-personal-fragment.json` recording the resolved `DIARY_PATH`.
+4. Appends a marker-delimited block to `~/.claude/CLAUDE.md` (creates the file if absent). The block is self-contained — gives Claude Code **where** the diary lands (`DIARY_PATH`), **when** to write entries (trigger conditions from the methodology), and **how** to format them (filename + voice + what-doesn't-go-in). Idempotent — re-running the install replaces it in place; uninstall removes it.
 
 ### Verify
 
