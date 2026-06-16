@@ -10,7 +10,7 @@ This repo is the **methodology layer**. It does NOT contain any diary entries, a
 |---|---|---|
 | Skill content | ❌ **moved to [`dvystrcil/skills`](https://github.com/dvystrcil/skills)** | Canonical home for all Claude Code / opencode / OWUI skills. `install.sh` clones that repo and symlinks the cluster-agnostic subset (per its `portable-skills.txt`) into `~/.claude/skills/`. |
 | `ac-process/` | ✅ | Templates for the AC-driven issue/PR pattern. Methodology, no project content. |
-| `diary/README.md` | ✅ | The diary practice itself — trigger rules, voice rules. **No actual entries.** |
+| Diary practice | ❌ **it's a skill** ([`dvystrcil/skills/claude/diary`](https://github.com/dvystrcil/skills/tree/main/claude/diary)) | The trigger/voice/format rules live in the diary `SKILL.md`, symlinked into `~/.claude/skills/diary/` by `install.sh`. **No actual entries** live there either. |
 | `install.sh` | ✅ | Idempotent setup — clones `dvystrcil/skills`, symlinks the portable subset, configures Claude Code, refuses unsafe paths. |
 | **Diary entries** | ❌ **deliberately excluded** | Entries written from any workstation live in personal-managed storage (iCloud / personal git account / personal cloud) — NEVER in this repo or any work-managed path. |
 | Homelab memory entries | ❌ excluded | Reference homelab infrastructure; no value at work environment + non-zero leakage risk. |
@@ -24,7 +24,7 @@ Three asymmetric risks this repo navigates:
 |---|---|
 | Skills (methodology + scripts) | **None.** Skills describe *how to think/work*, not project content. Bringing a skill to work makes work better without claiming work IP. |
 | AC-issue pattern | **None.** Same shape — a methodology, not project content. |
-| Diary practice | **Real risk.** Diary entries written from a work workstation may discuss work topics. The *methodology* (this repo's `diary/README.md`) is portable IP; specific entries are not — and they MUST live in personal-managed storage from the moment they're written, never in any work-managed git repo. |
+| Diary practice | **Real risk.** Diary entries written from a work workstation may discuss work topics. The *methodology* (the `diary` skill in [`dvystrcil/skills`](https://github.com/dvystrcil/skills)) is portable IP; specific entries are not — and they MUST live in personal-managed storage from the moment they're written, never in any work-managed git repo. |
 
 **The install script enforces this**: it sets the diary path to a personal-only location, and refuses to run if the install directory is under a work-managed path.
 
@@ -131,18 +131,11 @@ That's `git pull --ff-only` followed by `./install.sh` with the saved env. Idemp
 
 If you ever want the bare `git pull` without re-running install: symlinks resolve dynamically, so pulling new skill content propagates automatically without an install pass.
 
-## What's in `claude-skills/`
+## Skills
 
-See [claude-skills/README.md](./claude-skills/README.md) for the per-skill audit.
+Skills live in [`dvystrcil/skills`](https://github.com/dvystrcil/skills) (the canonical home). `install.sh` clones that repo and symlinks the **portable subset** into `~/.claude/skills/`. The subset is defined by [`portable-skills.txt`](https://github.com/dvystrcil/skills/blob/main/portable-skills.txt) — the single source of truth, **not duplicated here** (a hardcoded list here would just drift). See that file for the current cluster-agnostic set.
 
-Current set (cluster-agnostic):
-- `code-reviewer/` — code review process + checklist
-- `doc-master/` — documentation/writing assistance
-- `find-skills/` — discover what skills are available
-- `first-ask/` — clarify scope before starting work
-- `frontend-design/` — frontend code review + design
-
-Some skills include illustrative examples drawn from the personal homelab context (e.g. `code-reviewer/SKILL.md` mentions ArgoCD ignoreDifferences as a review item). Substitute your work environment's equivalents mentally; nothing in the methodology is homelab-specific.
+Homelab-specific skills exist under `dvystrcil/skills/claude/` but are excluded from the portable manifest. Where a homelab skill carries portable methodology, a generic version is in the portable set instead — e.g. `change-validation` (the discipline behind the homelab `upgrade-validate` script) and `secrets-hygiene` (the backend-agnostic version of `homelab-secrets`). Portable skills keep any homelab-flavored examples in a clearly-fenced "Homelab specifics" section.
 
 ## What's in `ac-process/`
 
@@ -150,14 +143,14 @@ The AC-driven issue pattern: define acceptance criteria upfront, work through th
 
 ## Diary practice
 
-The diary methodology is now a **first-class skill** at `claude-skills/diary/SKILL.md`. The install symlinks it into `~/.claude/skills/diary/` alongside the other skills, so Claude Code loads the trigger conditions, voice rules, and file format at session start without needing a manual prompt.
+The diary methodology is now a **first-class skill** at `dvystrcil/skills/claude/diary/SKILL.md`. The install symlinks it into `~/.claude/skills/diary/` alongside the other skills, so Claude Code loads the trigger conditions, voice rules, and file format at session start without needing a manual prompt.
 
 The CLAUDE.md block written by the install records this workstation's `DIARY_PATH` and points at the skill. Diary entries land at `$DIARY_PATH` (the operator's choice — personal storage at home, work-managed storage at work) and never in this repo.
 
 ## License
 
 - Code (install.sh, any scripts): MIT
-- Methodology docs (READMEs in `ac-process/`, `diary/`): CC-BY-4.0
-- Selected skills in `claude-skills/`: whatever their upstream license specifies (most are MIT or unlicensed; verify per-skill)
+- Methodology docs (READMEs in `ac-process/`): CC-BY-4.0
+- Skills live in [`dvystrcil/skills`](https://github.com/dvystrcil/skills) and carry their own licenses (verify per-skill)
 
 **Diary entries themselves are © personal, all rights reserved** — but they aren't in this repo, so this license matrix doesn't cover them; their license is whatever the personal storage location is governed by.
