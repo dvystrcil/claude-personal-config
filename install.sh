@@ -256,14 +256,21 @@ fi
 cat >> "$claude_md" <<EOF
 
 $marker_start
-# Diary practice — when to write + how to format lives in the \`diary\` skill:
-#   $CLAUDE_HOME/skills/diary/SKILL.md
-# (symlinked from dvystrcil/skills: $SKILLS_REPO_DIR/claude/diary/SKILL.md)
+# Diary practice (claude-personal-config)
 #
-# Entries land in:
-#   $DIARY_PATH
+# BEHAVIOR — act on this each session, do not just read it:
+# After a substantial or eventful session — a notable correction, a surprise, a
+# principle crystallizing, a near-miss, a change of direction, or whenever the user
+# asks — PROACTIVELY OFFER to write a diary entry (via the \`diary\` skill) before
+# wrapping up. The skill defines HOW (trigger detail, voice, format); this block is
+# the WHEN that makes it fire. Skip routine/unremarkable sessions — selectivity is
+# what keeps the diary worth re-reading.
 #
-# Settings fragment ref: $frag
+# Reference (where things live):
+#   skill:    $CLAUDE_HOME/skills/diary/SKILL.md
+#             (symlinked from dvystrcil/skills: $SKILLS_REPO_DIR/claude/diary/SKILL.md)
+#   entries:  $DIARY_PATH
+#   fragment: $frag
 $marker_end
 EOF
 info "  ✓ wrote CLAUDE.md diary block: $claude_md"
