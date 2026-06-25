@@ -87,7 +87,7 @@ is_under_any_path() {
 }
 
 uninstall() {
-    info "Uninstalling — removing skill symlinks, settings fragment, CLAUDE.md diary block, update.sh."
+    info "Uninstalling — removing skill symlinks, settings fragment, CLAUDE.md diary block, secret-scan hook, update.sh."
     local update_script="$REPO_DIR/update.sh"
     if [ -f "$update_script" ]; then
         rm "$update_script"
@@ -129,6 +129,20 @@ uninstall() {
             rm "$claude_md"
             info "  removed empty CLAUDE.md: $claude_md"
         fi
+    fi
+    # Secret-scan hook: remove it; unset core.hooksPath only if it is still ours
+    # (never touch a corporate/other hooksPath we deliberately didn't override).
+    local hooks_dir="$CLAUDE_HOME/git-hooks"
+    if [ -f "$hooks_dir/pre-commit" ]; then
+        rm "$hooks_dir/pre-commit"
+        rmdir "$hooks_dir" 2>/dev/null || true
+        info "  removed secret-scan pre-commit hook: $hooks_dir/pre-commit"
+    fi
+    local hp
+    hp=$(git config --global --get core.hooksPath || true)
+    if [ "$hp" = "$hooks_dir" ]; then
+        git config --global --unset core.hooksPath
+        info "  unset core.hooksPath (was → $hooks_dir)"
     fi
     info "Uninstall complete. Diary entries at \$DIARY_PATH and the cloned skills repo left untouched."
     exit 0
@@ -275,6 +289,32 @@ $marker_end
 EOF
 info "  ✓ wrote CLAUDE.md diary block: $claude_md"
 
+# Install a global gitleaks pre-commit hook (secret-scan, every repo).
+# Conflict-safe: NEVER clobbers an existing core.hooksPath — on a managed/work
+# machine, corporate hooks win and we just print integration instructions.
+HOOKS_DIR="$CLAUDE_HOME/git-hooks"
+mkdir -p "$HOOKS_DIR"
+install -m 0755 "$REPO_DIR/hooks/pre-commit" "$HOOKS_DIR/pre-commit"
+info "  ✓ installed secret-scan pre-commit hook: $HOOKS_DIR/pre-commit"
+
+current_hp=$(git config --global --get core.hooksPath || true)
+if [ -z "$current_hp" ]; then
+    git config --global core.hooksPath "$HOOKS_DIR"
+    info "  ✓ set global core.hooksPath → $HOOKS_DIR"
+elif [ "$current_hp" = "$HOOKS_DIR" ]; then
+    info "  ✓ core.hooksPath already → $HOOKS_DIR (hook refreshed)"
+else
+    warn "  ⚠ core.hooksPath is already set to '$current_hp' (not ours) — NOT overriding it."
+    warn "    To enable secret-scanning here, fold the contents of"
+    warn "    $HOOKS_DIR/pre-commit into '$current_hp/pre-commit', or unset core.hooksPath."
+fi
+
+if ! command -v gitleaks >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/gitleaks" ]; then
+    warn "  ⚠ gitleaks not found (PATH or ~/.local/bin) — the hook SKIPS scanning until"
+    warn "    it's installed (https://github.com/gitleaks/gitleaks). Commits are never"
+    warn "    blocked by its absence; you just get no secret protection until then."
+fi
+
 # Write a per-workstation update.sh
 update_script="$REPO_DIR/update.sh"
 {
@@ -310,6 +350,7 @@ Install complete.
   Skills source repo:   $SKILLS_REPO_DIR  (dvystrcil/skills)
   Settings fragment:    $frag
   Diary entries land:   $DIARY_PATH
+  Secret-scan hook:     $HOOKS_DIR/pre-commit (global gitleaks pre-commit)
 
 To verify: ask Claude Code to list available skills — the cluster-agnostic
 subset from dvystrcil/skills should appear (plus any Anthropic-installed

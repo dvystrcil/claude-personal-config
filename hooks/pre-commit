@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Global pre-commit secret scan (gitleaks) — installed by claude-personal-config.
+# Blocks staged secrets from being committed, in every repo (wired via
+# `git config --global core.hooksPath`). Rationale: a stray plaintext
+# credentials file was once staged with `git add -A` and only caught at push
+# by GitHub Push Protection — this catches that class one layer earlier, at
+# commit, before it can reach any remote (incl. ones without push protection).
+#
+# Scans ONLY staged changes (fast). Degrades gracefully if gitleaks is absent —
+# it WARNS and allows the commit (never blocks on a missing tool). Deliberate
+# override for a confirmed false positive: git commit --no-verify
+set -uo pipefail
+
+GITLEAKS="$(command -v gitleaks 2>/dev/null || true)"
+[ -z "$GITLEAKS" ] && [ -x "$HOME/.local/bin/gitleaks" ] && GITLEAKS="$HOME/.local/bin/gitleaks"
+if [ -z "$GITLEAKS" ] || [ ! -x "$GITLEAKS" ]; then
+  echo "pre-commit: gitleaks not found — skipping secret scan (install it to enable)" >&2
+  exit 0
+fi
+
+if ! "$GITLEAKS" protect --staged --redact --no-banner; then
+  echo >&2
+  echo "✋ COMMIT BLOCKED — gitleaks found a secret in your staged changes." >&2
+  echo "   Unstage it (git restore --staged <file>) and keep secrets out of the repo." >&2
+  echo "   Deliberate override (only if you're sure it's a false positive): git commit --no-verify" >&2
+  exit 1
+fi
+exit 0
