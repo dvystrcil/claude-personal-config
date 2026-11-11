@@ -25,7 +25,7 @@ If you found something useful here and want to contribute back, thank you. Pleas
 
 1. **Read the selection criteria above.** Confirm your change satisfies all of them.
 2. **Open the PR against `main`** with the PR template's checklist filled in.
-3. **Wait for review.** The repo's CODEOWNERS rule requires @dvystrcil's approval; expect 1-7 days depending on availability.
+3. **Wait for review.** Only the maintainer (@dvystrcil) can merge; expect 1-7 days depending on availability.
 4. **Squash-merge is the default** for PRs that are coherent single-topic changes. Multi-commit stories are merged as-is.
 
 ## Licensing
