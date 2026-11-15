@@ -266,9 +266,17 @@ if [ -f "$claude_md" ] && grep -qF "$marker_start" "$claude_md"; then
     ' "$claude_md" > "$tmp"
     mv "$tmp" "$claude_md"
 fi
+# Drop blank lines at the end (where the old block's separator was), so a
+# re-run leaves the file byte-identical instead of adding a blank line each time.
+if [ -f "$claude_md" ]; then
+    tmp=$(mktemp)
+    awk '/^[[:space:]]*$/ { buf[n++] = $0; next } { for (i = 0; i < n; i++) print buf[i]; n = 0; print }' "$claude_md" > "$tmp"
+    mv "$tmp" "$claude_md"
+fi
+# One blank line between the user's own content and the block; none in an empty file.
+if [ -s "$claude_md" ]; then echo >> "$claude_md"; fi
 
 cat >> "$claude_md" <<EOF
-
 $marker_start
 # Diary practice (claude-personal-config)
 #
@@ -363,8 +371,8 @@ subset from dvystrcil/skills should appear (plus any Anthropic-installed
 skills like find-skills / tdd / scheduler that this script doesn't manage).
 
 If $DIARY_PATH is a git clone (e.g. your work-diary or personal-diary repo),
-push entries to its remote periodically — entries are markdown files Claude
-writes to that directory; git semantics are operator-managed.
+Claude commits and pushes each entry when it writes it (the CLAUDE.md block
+says so); you only step in if a push fails.
 
 To update later: run \`./update.sh\` from this directory. It pulls both repos
 and re-runs install.sh with the env vars this install was invoked with.
