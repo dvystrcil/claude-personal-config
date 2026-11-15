@@ -39,7 +39,7 @@ Entries land in personal-managed storage. Pick one:
 | Diary store option | Example path | Notes |
 |---|---|---|
 | iCloud / Dropbox / Proton Drive | `~/iCloud-Drive/diary` | Simplest; no git needed; sync handled by the cloud provider |
-| Personal-account git repo | `~/diary` cloned from your personal GitHub | Versioned; push when you want |
+| Personal-account git repo | `~/diary` cloned from your personal GitHub | Versioned; Claude commits and pushes each entry when it writes it |
 | Plain local directory backed up to a personal-only cloud | `~/.diary` | Simplest of all if cloud sync covers it |
 
 Then:

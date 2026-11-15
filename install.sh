@@ -276,10 +276,13 @@ $marker_start
 # After a substantial or eventful session — a notable correction, a surprise, a
 # principle crystallizing, a near-miss, a change of direction, or whenever the user
 # asks — WRITE the diary entry yourself (via the \`diary\` skill) before wrapping
-# up: do not ask first, and do not wait to be asked. Then tell the user in your
-# reply that you wrote it, with the file path (and, if \$DIARY_PATH is a git
-# clone you couldn't commit or push to, the command to do it). The skill defines
-# HOW (trigger detail, voice, format); this block is the WHEN that makes it fire.
+# up: do not ask first, and do not wait to be asked. If \$DIARY_PATH is a git
+# clone, commit the entry and push it yourself in the same turn, straight to
+# its default branch (the diary is the one repo that skips branch + PR);
+# only if the commit or push fails, say so with the error and give the command.
+# Then tell the user in your reply that you wrote it, with the path + commit.
+# The skill defines HOW (trigger detail, voice, format); this block is the WHEN
+# that makes it fire.
 # Skip routine/unremarkable sessions — selectivity is what keeps the diary worth
 # re-reading.
 #
