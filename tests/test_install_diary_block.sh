@@ -39,6 +39,13 @@ check "WRITE the diary entry yourself"
 check "do not ask first"
 check "tell the user"
 check "entries:  $tmp/diary"
+# 2026-11-14: the operator, after an entry was left untracked with the git
+# command handed back: "why are you not pushing your own diary entries? it was
+# the whole point of making it its own repo". A git-clone diary gets its entry
+# committed AND pushed by the agent; the command is only for when that fails.
+check "commit the entry and push it yourself"
+check "only if the commit or push fails"
+if grep -qF "the command to do it)" <<<"$block"; then echo "FAIL: block still hands the push back to the user"; fail=1; fi
 if grep -qi "offer" <<<"$block"; then echo "FAIL: block still says to offer"; fail=1; fi
 [ "$fail" = 0 ] || { echo "--- block ---"; echo "$block"; exit 1; }
-echo "ok: CLAUDE.md block says to write the entry and tell the user"
+echo "ok: CLAUDE.md block says to write the entry, push it, and tell the user"
