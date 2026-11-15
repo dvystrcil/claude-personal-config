@@ -1,0 +1,27 @@
+name: test
+
+# Hermetic shell tests for install.sh. Each test runs a copy of the installer
+# against a temp HOME and a local skills repo: no network, no real ~/.claude.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    # ubuntu-latest, like secret-scan.yml: this is a public repo, and the
+    # tests need nothing from the cluster.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Run tests/test_*.sh
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tests/test_*.sh)
+          # A green run that ran nothing proves nothing.
+          [ ${#tests[@]} -gt 0 ] || { echo "::error::no tests found"; exit 1; }
+          for t in "${tests[@]}"; do echo "== $t"; bash "$t"; done

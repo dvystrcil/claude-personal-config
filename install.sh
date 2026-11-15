@@ -275,10 +275,13 @@ $marker_start
 # BEHAVIOR — act on this each session, do not just read it:
 # After a substantial or eventful session — a notable correction, a surprise, a
 # principle crystallizing, a near-miss, a change of direction, or whenever the user
-# asks — PROACTIVELY OFFER to write a diary entry (via the \`diary\` skill) before
-# wrapping up. The skill defines HOW (trigger detail, voice, format); this block is
-# the WHEN that makes it fire. Skip routine/unremarkable sessions — selectivity is
-# what keeps the diary worth re-reading.
+# asks — WRITE the diary entry yourself (via the \`diary\` skill) before wrapping
+# up: do not ask first, and do not wait to be asked. Then tell the user in your
+# reply that you wrote it, with the file path (and, if \$DIARY_PATH is a git
+# clone you couldn't commit or push to, the command to do it). The skill defines
+# HOW (trigger detail, voice, format); this block is the WHEN that makes it fire.
+# Skip routine/unremarkable sessions — selectivity is what keeps the diary worth
+# re-reading.
 #
 # Reference (where things live):
 #   skill:    $CLAUDE_HOME/skills/diary/SKILL.md
